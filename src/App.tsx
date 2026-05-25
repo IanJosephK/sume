@@ -87,6 +87,7 @@ export default function App() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeEdit(); }}
           >
             <EditorScreen initial={editingMed} onClose={closeEdit} />
           </motion.div>
