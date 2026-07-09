@@ -1,0 +1,15 @@
+name = "sume-push"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "SUME_KV"
+id = "f22c6cae343b4332aeb699b1528e422b"
+
+[triggers]
+crons = ["* * * * *"] # Every minute
+
+[vars]
+VAPID_SUBJECT = "mailto:ianjosephk.13@gmail.com"
+VAPID_PUBLIC_KEY = "BKIj8lqsUSpp7O8IdIOSEtHYqevHFTGkwS-7qx9jIdpswx11Atmf7snvygAANQ4vYZNQlzKxR0pAgua4l5vNo9U"
+# VAPID_PRIVATE_KEY should be set as a secret: wrangler secret put VAPID_PRIVATE_KEY

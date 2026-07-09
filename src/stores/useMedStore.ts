@@ -5,6 +5,7 @@ import type { StoredMed } from "../lib/db";
 
 import { nowHHMM, todayISO } from "../lib/helpers";
 import { sendNotification } from "../lib/notifications";
+import { syncReminders } from "../lib/pushSync";
 
 interface MedState {
   meds: Medication[];
@@ -67,6 +68,13 @@ function runtimeToStored(m: Medication): StoredMed {
   };
 }
 
+function pushSync(meds: Medication[]) {
+  const reminders = meds
+    .filter((m) => m.reminder)
+    .map((m) => ({ time: m.reminder!, medName: m.name }));
+  syncReminders(reminders);
+}
+
 export const useMedStore = create<MedState>()((set, get) => ({
   meds: [],
   loaded: false,
@@ -76,17 +84,16 @@ export const useMedStore = create<MedState>()((set, get) => ({
     const today = todayISO();
     const todayLogs = await db.logs.where("date").equals(today).toArray();
     const loggedSet = new Set(todayLogs.map((l) => l.medId));
-    set({
-      meds: stored.map((s) => {
-        const m = storedToRuntime(s);
-        if (loggedSet.has(m.id)) {
-          const log = todayLogs.find((l) => l.medId === m.id);
-          return { ...m, status: "taken" as MedStatus, takenAt: log?.takenAt ?? undefined };
-        }
-        return m;
-      }),
-      loaded: true,
+    const meds = stored.map((s) => {
+      const m = storedToRuntime(s);
+      if (loggedSet.has(m.id)) {
+        const log = todayLogs.find((l) => l.medId === m.id);
+        return { ...m, status: "taken" as MedStatus, takenAt: log?.takenAt ?? undefined };
+      }
+      return m;
     });
+    set({ meds, loaded: true });
+    pushSync(meds);
   },
 
   addMed: async (data) => {
@@ -98,7 +105,9 @@ export const useMedStore = create<MedState>()((set, get) => ({
       reminder: data.reminder,
     };
     await db.meds.put(runtimeToStored(med));
-    set((s) => ({ meds: [...s.meds, med] }));
+    const next = [...get().meds, med];
+    set({ meds: next });
+    pushSync(next);
   },
 
   updateMed: async (id, data) => {
@@ -112,12 +121,16 @@ export const useMedStore = create<MedState>()((set, get) => ({
       timer: data.timer ? { ...data.timer, remaining: data.timer.minutes * 60 } : null,
     };
     await db.meds.put(runtimeToStored(updated));
-    set((s) => ({ meds: s.meds.map((m) => (m.id === id ? updated : m)) }));
+    const next = get().meds.map((m) => (m.id === id ? updated : m));
+    set({ meds: next });
+    pushSync(next);
   },
 
   deleteMed: async (id) => {
     await db.meds.delete(id);
-    set((s) => ({ meds: s.meds.filter((m) => m.id !== id) }));
+    const next = get().meds.filter((m) => m.id !== id);
+    set({ meds: next });
+    pushSync(next);
   },
 
   logMed: (id) => {

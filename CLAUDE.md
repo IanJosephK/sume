@@ -11,9 +11,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 No test framework is configured.
 
+### Cloudflare Worker (`worker/`)
+
+- `cd worker && npm install` — install worker dependencies
+- `cd worker && npm run dev` — run worker locally with wrangler
+- `cd worker && npm run deploy` — deploy to Cloudflare
+
 ## Architecture
 
-Sume is a medication tracker PWA built with React 19, Vite, Tailwind CSS v4, and TypeScript. All user data is stored locally in the browser via IndexedDB (Dexie). There is no backend — the app is fully offline-capable once installed.
+Sume is a medication tracker PWA built with React 19, Vite, Tailwind CSS v4, and TypeScript. User data is stored locally in the browser via IndexedDB (Dexie). A Cloudflare Worker handles background push notifications for medication reminders.
 
 ### Data flow
 
@@ -48,9 +54,19 @@ CSS media queries must be ordered carefully — rules at the same specificity ar
 
 ### Notifications & reminders
 
-- `src/lib/notifications.ts` wraps the Notification API with service worker fallback
-- Medications can have a `reminder` time (HH:MM) — a 30-second interval in `App.tsx` checks for due reminders on pending meds
-- The existing `timer` feature is different: it's a countdown *after* taking a med (e.g., "wait 30 min before eating")
+Two notification systems:
+
+- **Local reminders** — `src/lib/notifications.ts` wraps the Notification API. A 30-second interval in `App.tsx` checks for due reminders on pending meds. Only works when the app is open.
+- **Push notifications** — `src/lib/pushSync.ts` syncs reminder schedules to a Cloudflare Worker (`worker/`). The worker runs a per-minute cron, checks KV for due reminders, and sends Web Push notifications even when the app is closed. Reminder times are converted from local to UTC before syncing. Push subscriptions are keyed by endpoint and self-heal (410 Gone responses trigger cleanup).
+- The `timer` feature is different: it's a countdown *after* taking a med (e.g., "wait 30 min before eating").
+
+### Cloudflare Worker (`worker/`)
+
+- `worker/src/index.ts` — API routes (`/api/subscribe`, `/api/unsubscribe`, `/api/vapid-public-key`) and cron handler
+- `worker/src/webpush.ts` — Web Push protocol implementation using Web Crypto API (no Node.js dependencies)
+- Storage: Cloudflare KV with two key patterns: `sub:{hash}` for subscription records, `time:{HH:MM}` for time-based index lookups
+- VAPID private key must be set as a Cloudflare secret (`wrangler secret put VAPID_PRIVATE_KEY`)
+- The PWA needs `VITE_PUSH_WORKER_URL` env var pointing to the deployed worker
 
 ### Icon system
 
