@@ -2,8 +2,8 @@ import { create } from "zustand";
 import type { Medication, MedStatus, TimeOfDay, IconName, SwatchColor } from "../lib/types";
 import { db } from "../lib/db";
 import type { StoredMed } from "../lib/db";
-import { SEED_MEDS } from "../lib/constants";
-import { nowHHMM } from "../lib/helpers";
+
+import { nowHHMM, todayISO } from "../lib/helpers";
 import { sendNotification } from "../lib/notifications";
 
 interface MedState {
@@ -69,14 +69,20 @@ export const useMedStore = create<MedState>()((set, get) => ({
 
   loadMeds: async () => {
     const stored = await db.meds.toArray();
-    if (stored.length === 0) {
-      // First launch: seed the DB
-      const seeds = SEED_MEDS.map(runtimeToStored);
-      await db.meds.bulkPut(seeds);
-      set({ meds: SEED_MEDS, loaded: true });
-    } else {
-      set({ meds: stored.map(storedToRuntime), loaded: true });
-    }
+    const today = todayISO();
+    const todayLogs = await db.logs.where("date").equals(today).toArray();
+    const loggedSet = new Set(todayLogs.map((l) => l.medId));
+    set({
+      meds: stored.map((s) => {
+        const m = storedToRuntime(s);
+        if (loggedSet.has(m.id)) {
+          const log = todayLogs.find((l) => l.medId === m.id);
+          return { ...m, status: "taken" as MedStatus, takenAt: log?.takenAt ?? undefined };
+        }
+        return m;
+      }),
+      loaded: true,
+    });
   },
 
   addMed: async (data) => {
@@ -110,16 +116,22 @@ export const useMedStore = create<MedState>()((set, get) => ({
   },
 
   logMed: (id) => {
+    const at = nowHHMM();
+    const date = todayISO();
     set((s) => ({
       meds: s.meds.map((m) => {
         if (m.id !== id) return m;
-        const at = nowHHMM();
         if (m.timer) {
           return { ...m, status: "timing" as MedStatus, takenAt: at, timer: { ...m.timer, remaining: m.timer.minutes * 60 } };
         }
         return { ...m, status: "taken" as MedStatus, takenAt: at };
       }),
     }));
+    db.logs.where({ medId: id, date }).first().then((existing) => {
+      if (!existing) {
+        db.logs.add({ medId: id, date, takenAt: at, loggedTimestamp: Date.now() });
+      }
+    });
   },
 
   undoMed: (id) => {
@@ -130,6 +142,8 @@ export const useMedStore = create<MedState>()((set, get) => ({
           : m
       ),
     }));
+    const date = todayISO();
+    db.logs.where({ medId: id, date }).delete();
   },
 
   tickTimers: () => {

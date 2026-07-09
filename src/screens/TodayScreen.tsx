@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Icons } from "../components/Icons";
 import { MedCard } from "../components/MedCard";
 import { useMedStore } from "../stores/useMedStore";
 import { useThemeStore } from "../stores/useThemeStore";
-import { getHeader } from "../lib/helpers";
+import { getHeader, daysAgoISO } from "../lib/helpers";
+import { db } from "../lib/db";
 import { TIMES } from "../lib/constants";
 import type { Medication, TimeOfDay } from "../lib/types";
 
@@ -24,11 +25,39 @@ interface TodayScreenProps {
 export function TodayScreen({ onOpenAdd, onGoHistory, onEdit }: TodayScreenProps) {
   const { meds, logMed, undoMed, tickTimers } = useMedStore();
   const { theme, toggleTheme } = useThemeStore();
+  const [streak, setStreak] = useState(0);
+
+  const computeStreak = useCallback(async () => {
+    const allMeds = await db.meds.toArray();
+    if (allMeds.length === 0) { setStreak(0); return; }
+
+    let count = 0;
+    // Start from yesterday and go backwards
+    for (let i = 1; i <= 365; i++) {
+      const date = daysAgoISO(i);
+      const dateTs = new Date(date + "T23:59:59").getTime();
+      const activeMeds = allMeds.filter((m) => m.createdAt <= dateTs);
+      if (activeMeds.length === 0) break; // No meds existed before this date
+      const dayLogs = await db.logs.where("date").equals(date).toArray();
+      const loggedIds = new Set(dayLogs.map((l) => l.medId));
+      const allLogged = activeMeds.every((m) => loggedIds.has(m.id));
+      if (allLogged) { count++; } else { break; }
+    }
+    // Also check if today is complete
+    const todayDate = daysAgoISO(0);
+    const todayLogs = await db.logs.where("date").equals(todayDate).toArray();
+    const todayLoggedIds = new Set(todayLogs.map((l) => l.medId));
+    const todayComplete = allMeds.every((m) => todayLoggedIds.has(m.id));
+    if (todayComplete) count++;
+    setStreak(count);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(tickTimers, 1000);
     return () => clearInterval(id);
   }, [tickTimers]);
+
+  useEffect(() => { computeStreak(); }, [meds, computeStreak]);
 
   const logged = meds.filter((m) => m.status === "taken" || m.status === "done" || m.status === "timing").length;
   const total = meds.length;
@@ -91,7 +120,7 @@ export function TodayScreen({ onOpenAdd, onGoHistory, onEdit }: TodayScreenProps
             transition={{ duration: 0.5 }}
           >
             <span className="meta__flame"><Icons.flame w={14} sw={1.6} /></span>
-            <span className="meta__num">12</span>
+            <span className="meta__num">{streak}</span>
             <span className="meta__lbl"> day streak</span>
           </motion.div>
           <div className="meta__progLabel"><b>{logged}</b> of {total} logged</div>
