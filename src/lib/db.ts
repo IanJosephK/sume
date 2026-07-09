@@ -11,6 +11,7 @@ export interface StoredMed {
   color: string;
   timerMinutes: number | null;
   timerMessage: string | null;
+  reminder: string | null;
   createdAt: number;
 }
 
@@ -31,6 +32,15 @@ const db = new Dexie("SumeDB") as Dexie & {
 db.version(1).stores({
   meds: "id, name, createdAt",
   logs: "++id, medId, date, [medId+date]",
+});
+
+db.version(2).stores({
+  meds: "id, name, createdAt",
+  logs: "++id, medId, date, [medId+date]",
+}).upgrade((tx) => {
+  return tx.table("meds").toCollection().modify((med) => {
+    if (med.reminder === undefined) med.reminder = null;
+  });
 });
 
 export { db };

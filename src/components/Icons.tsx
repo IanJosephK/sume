@@ -38,6 +38,7 @@ export const Icons = {
   minus:    (p: IconProps) => <Ic {...p} d="M5 12H19"/>,
   x:        (p: IconProps) => <Ic {...p} d="M6 6L18 18M18 6L6 18"/>,
   moon:     (p: IconProps) => <Ic {...p} d="M21 12.8A9 9 0 1 1 11.2 3C11.2 3 13 6 13 9C13 12 15 14 17 14.3A9 9 0 0 0 21 12.8Z"/>,
+  bell:     (p: IconProps) => <Ic {...p}><path d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z"/><path d="M13.7 21A2 2 0 0 1 10.3 21"/></Ic>,
 };
 
 export type { IconProps };

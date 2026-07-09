@@ -22,6 +22,8 @@ export function EditorScreen({ initial, onClose }: EditorScreenProps) {
   const [timerOn, setTimerOn]   = useState(initial?.timer ? true : false);
   const [timerMin, setTimerMin] = useState(initial?.timer?.minutes ?? 30);
   const [timerMsg, setTimerMsg] = useState(initial?.timer?.message ?? "You can eat now");
+  const [reminderOn, setReminderOn] = useState(!!initial?.reminder);
+  const [reminderTime, setReminderTime] = useState(initial?.reminder ?? "08:00");
   const [delConfirm, setDelConfirm] = useState(false);
   const [whenSet, setWhenSet]   = useState<Set<TimeOfDay>>(new Set(initial?.times ?? []));
 
@@ -41,6 +43,7 @@ export function EditorScreen({ initial, onClose }: EditorScreenProps) {
       icon,
       color,
       timer: timerOn ? { minutes: timerMin, message: timerMsg || "Done" } : null,
+      reminder: reminderOn ? reminderTime : null,
     };
     if (isEdit && initial) {
       await updateMed(initial.id, data);
@@ -120,6 +123,26 @@ export function EditorScreen({ initial, onClose }: EditorScreenProps) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="field field--toggleRow">
+          <div className="toggleRow">
+            <div>
+              <div className="field__lbl no-mb">Daily reminder</div>
+              <div className="field__hint">Get notified if you haven't taken it yet</div>
+            </div>
+            <button className={"switch " + (reminderOn ? "switch--on" : "")} onClick={() => setReminderOn(!reminderOn)}>
+              <span className="switch__knob" />
+            </button>
+          </div>
+          {reminderOn && (
+            <div className="timerBox">
+              <div className="timerBox__row">
+                <label className="field__lbl no-mb">Remind at</label>
+                <input type="time" className="input reminder-time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="field field--toggleRow">

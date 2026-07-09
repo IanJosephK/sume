@@ -23,6 +23,7 @@ export interface Medication {
   icon: IconName;
   color: SwatchColor;
   timer: MedTimer | null;
+  reminder: string | null;
   status: MedStatus;
   takenAt?: string;
 }
