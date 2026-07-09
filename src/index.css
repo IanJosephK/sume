@@ -50,8 +50,8 @@
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 html, body { margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
 * { box-sizing: border-box; }
-button { font-family: inherit; cursor: pointer; }
-input  { font-family: inherit; }
+button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+input  { font-family: inherit; font-size: 16px; }
 
 body {
   min-height: 100svh;
@@ -82,7 +82,18 @@ body {
 }
 @media (max-width: 440px) {
   body { padding: 0; align-items: stretch; }
-  .phone { width: 100%; height: 100svh; border-radius: 0; box-shadow: none; border: none; }
+  #root { width: 100%; }
+  .phone {
+    width: 100%;
+    height: 100svh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 .phone__status {
@@ -99,6 +110,16 @@ body {
 .phone__status .dots { display: flex; gap: 3px; }
 .phone__status .dots span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .85; }
 .phone__status .dots span:last-child { opacity: .3; }
+
+@media (max-width: 440px) {
+  .phone__status { display: none; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .card__edit { opacity: 1; }
+  .tg { min-width: 44px; min-height: 44px; }
+  .chip { padding: 10px 16px; }
+}
 
 .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 
@@ -318,6 +339,24 @@ body {
 .sw-olive { background: oklch(var(--sw-l) var(--sw-c) calc(var(--accent-h) + 64)); color: var(--sw-fg); }
 .sw-blush { background: oklch(var(--sw-l) var(--sw-c) calc(var(--accent-h) + 90)); color: var(--sw-fg); }
 .sw-missed{ background: var(--surface2); color: var(--mute2); }
+
+/* ── Standalone PWA (installed) ────────────────────────────────────────────── */
+@media (display-mode: standalone) {
+  .phone__status { display: none; }
+  body { padding: 0; }
+  #root { width: 100%; }
+  .phone {
+    width: 100%;
+    height: 100svh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
 
 /* ── Desktop layout (≥768px) ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
