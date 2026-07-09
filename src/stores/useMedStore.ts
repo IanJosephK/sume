@@ -18,6 +18,7 @@ interface MedState {
     icon: IconName;
     color: SwatchColor;
     timer: { minutes: number; message: string } | null;
+    reminder: string | null;
   }) => Promise<void>;
   updateMed: (id: string, data: {
     name: string;
@@ -27,6 +28,7 @@ interface MedState {
     icon: IconName;
     color: SwatchColor;
     timer: { minutes: number; message: string } | null;
+    reminder: string | null;
   }) => Promise<void>;
   deleteMed: (id: string) => Promise<void>;
   logMed: (id: string) => void;
@@ -44,6 +46,7 @@ function storedToRuntime(s: StoredMed): Medication {
     icon: s.icon as IconName,
     color: s.color as SwatchColor,
     timer: s.timerMinutes != null ? { minutes: s.timerMinutes, message: s.timerMessage ?? "Done", remaining: s.timerMinutes * 60 } : null,
+    reminder: s.reminder ?? null,
     status: "pending",
   };
 }
@@ -59,6 +62,7 @@ function runtimeToStored(m: Medication): StoredMed {
     color: m.color,
     timerMinutes: m.timer?.minutes ?? null,
     timerMessage: m.timer?.message ?? null,
+    reminder: m.reminder,
     createdAt: Date.now(),
   };
 }
@@ -91,6 +95,7 @@ export const useMedStore = create<MedState>()((set, get) => ({
       status: "pending",
       ...data,
       timer: data.timer ? { ...data.timer, remaining: data.timer.minutes * 60 } : null,
+      reminder: data.reminder,
     };
     await db.meds.put(runtimeToStored(med));
     set((s) => ({ meds: [...s.meds, med] }));

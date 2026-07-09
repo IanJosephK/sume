@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TodayScreen } from "./screens/TodayScreen";
 import { EditorScreen } from "./screens/EditorScreen";
 import { HistoryScreen } from "./screens/HistoryScreen";
 import { useMedStore } from "./stores/useMedStore";
 import { useThemeStore, applyTheme } from "./stores/useThemeStore";
-import { nowHHMM } from "./lib/helpers";
-import { requestNotificationPermission } from "./lib/notifications";
+import { nowHHMM, todayISO } from "./lib/helpers";
+import { requestNotificationPermission, sendNotification } from "./lib/notifications";
 import type { Medication } from "./lib/types";
 
 type Screen = "today" | "history" | "edit";
@@ -55,6 +55,27 @@ export default function App() {
         registerSW({ immediate: true });
       }).catch(() => {});
     }
+  }, []);
+
+  // Check reminders every 30s
+  const firedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const check = () => {
+      const now = nowHHMM();
+      const today = todayISO();
+      const key = today + ":" + now;
+      const { meds } = useMedStore.getState();
+      for (const m of meds) {
+        if (!m.reminder || m.status !== "pending") continue;
+        if (m.reminder === now && !firedRef.current.has(m.id + ":" + key)) {
+          firedRef.current.add(m.id + ":" + key);
+          sendNotification("Sume", `Time to take ${m.name}${m.dose ? " (" + m.dose + ")" : ""}`);
+        }
+      }
+    };
+    const id = setInterval(check, 30_000);
+    check();
+    return () => clearInterval(id);
   }, []);
 
   if (!loaded) return null;

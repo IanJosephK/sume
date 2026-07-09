@@ -29,6 +29,11 @@ export function MedCard({ med, onTap, onUndo, onEdit }: MedCardProps) {
         </div>
 
         {med.status === "pending" && med.note && <div className="card__note">{med.note}</div>}
+        {med.status === "pending" && med.reminder && (
+          <div className="card__reminder">
+            <Icons.bell w={11} sw={1.8} /> {med.reminder}
+          </div>
+        )}
         {med.status === "pending" && (
           <button className="card__cta" onClick={() => onTap(med.id)}>
             tap to log <Icons.chevRight w={13} sw={1.8} />

@@ -208,6 +208,7 @@ body {
 .card__edit { color: var(--mute2); display: inline-flex; margin-left: auto; opacity: 0; transition: opacity .15s; }
 .card__row1:hover .card__edit { opacity: 1; }
 .card__note { color: var(--muted); font-size: 12.5px; letter-spacing: -0.005em; }
+.card__reminder { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .02em; margin-top: 2px; }
 .card__cta { margin-top: 4px; align-self: flex-start; background: none; border: none; padding: 0; display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-weight: 500; font-size: 12.5px; font-family: var(--font); transition: gap .15s; }
 .card__cta:hover { gap: 6px; }
 .card__meta { display: flex; justify-content: space-between; align-items: center; margin-top: 3px; gap: 12px; }
@@ -287,6 +288,19 @@ body {
 .stepper__val { padding: 0 10px; display: flex; align-items: baseline; gap: 3px; height: 100%; }
 .stepper__num { font-family: var(--mono); font-weight: 500; font-size: 14px; line-height: 34px; font-variant-numeric: tabular-nums; }
 .stepper__unit { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.reminder-time {
+  width: auto;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  padding: 6px 0;
+  color-scheme: dark light;
+}
+[data-theme="dark"] .reminder-time { color-scheme: dark; }
+[data-theme="light"] .reminder-time { color-scheme: light; }
+
 .del { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: transparent; border: none; color: #c84a2c; padding: 14px 0; font-size: 13px; width: 100%; border-top: 1px solid var(--line); transition: background .12s; border-radius: 8px; }
 [data-theme="dark"] .del { color: #e87e60; }
 .del:hover { background: var(--hover); }
