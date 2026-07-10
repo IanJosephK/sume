@@ -88,6 +88,14 @@ export const useMedStore = create<MedState>()((set, get) => ({
       const m = storedToRuntime(s);
       if (loggedSet.has(m.id)) {
         const log = todayLogs.find((l) => l.medId === m.id);
+        if (m.timer && log?.loggedTimestamp) {
+          const elapsed = Math.floor((Date.now() - log.loggedTimestamp) / 1000);
+          const total = m.timer.minutes * 60;
+          if (elapsed < total) {
+            return { ...m, status: "timing" as MedStatus, takenAt: log?.takenAt ?? undefined, timer: { ...m.timer, remaining: total - elapsed } };
+          }
+          return { ...m, status: "done" as MedStatus, takenAt: log?.takenAt ?? undefined, timer: { ...m.timer, remaining: 0 } };
+        }
         return { ...m, status: "taken" as MedStatus, takenAt: log?.takenAt ?? undefined };
       }
       return m;
