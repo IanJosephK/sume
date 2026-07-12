@@ -79,9 +79,16 @@ async function handleSubscribe(request: Request, env: Env): Promise<Response> {
     updatedAt: Date.now(),
   };
 
+  // Remove old time index entries before storing updated record
+  const oldData = await env.SUME_KV.get(key);
+  if (oldData) {
+    const oldRecord = JSON.parse(oldData) as SubscriptionRecord;
+    await removeFromTimeIndex(env, key, oldRecord.reminders);
+  }
+
   await env.SUME_KV.put(key, JSON.stringify(record));
 
-  // Also index by reminder time for fast cron lookups
+  // Index by reminder time for fast cron lookups
   await updateTimeIndex(env, key, record.reminders);
 
   return json({ ok: true });
