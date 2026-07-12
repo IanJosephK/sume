@@ -120,11 +120,11 @@ async function encryptPayload(
     serverPublicKeyRaw
   );
 
-  const authHkdfKey = await crypto.subtle.importKey("raw", authSecret, { name: "HKDF" }, false, ["deriveBits"]);
+  const ikmKey = await crypto.subtle.importKey("raw", sharedSecret, { name: "HKDF" }, false, ["deriveBits"]);
   const prk = new Uint8Array(
     await crypto.subtle.deriveBits(
-      { name: "HKDF", hash: "SHA-256", salt: sharedSecret, info: authInfo },
-      authHkdfKey,
+      { name: "HKDF", hash: "SHA-256", salt: authSecret, info: authInfo },
+      ikmKey,
       256
     )
   );
@@ -151,7 +151,7 @@ async function encryptPayload(
   );
 
   // Encrypt
-  const paddedPayload = concatUint8Arrays(new Uint8Array([2, 0]), enc.encode(payload));
+  const paddedPayload = concatUint8Arrays(enc.encode(payload), new Uint8Array([2]));
   const aesKey = await crypto.subtle.importKey("raw", contentKey, { name: "AES-GCM" }, false, ["encrypt"]);
   const encrypted = new Uint8Array(
     await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, paddedPayload)
