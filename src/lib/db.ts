@@ -43,4 +43,13 @@ db.version(2).stores({
   });
 });
 
+db.version(3).stores({
+  meds: "id, name, createdAt",
+  logs: "++id, medId, date, [medId+date]",
+}).upgrade((tx) => {
+  return tx.table("meds").toCollection().modify((med) => {
+    if (!med.times || med.times.length === 0) med.times = ["morning"];
+  });
+});
+
 export { db };
