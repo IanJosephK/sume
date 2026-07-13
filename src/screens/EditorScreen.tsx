@@ -35,10 +35,11 @@ export function EditorScreen({ initial, onClose }: EditorScreenProps) {
 
   const handleSave = async () => {
     if (!name.trim()) return;
+    const times = whenSet.size > 0 ? [...whenSet] : ["morning" as TimeOfDay];
     const data = {
       name: name.trim(),
       dose: dose.trim(),
-      times: [...whenSet] as TimeOfDay[],
+      times,
       note: note.trim(),
       icon,
       color,
