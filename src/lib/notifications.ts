@@ -12,8 +12,20 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return permissionGranted;
 }
 
-export function sendNotification(title: string, body: string): void {
+export async function sendNotification(title: string, body: string): Promise<void> {
   if (!permissionGranted && Notification.permission !== "granted") return;
+  if ("serviceWorker" in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: "sume-timer",
+      });
+      return;
+    } catch {}
+  }
   try {
     new Notification(title, {
       body,
@@ -21,16 +33,7 @@ export function sendNotification(title: string, body: string): void {
       badge: "/icon-192.png",
       tag: "sume-timer",
     });
-  } catch {
-    // Notification constructor may fail in some contexts (e.g. service worker needed)
-    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: "SHOW_NOTIFICATION",
-        title,
-        body,
-      });
-    }
-  }
+  } catch {}
 }
 
 export function hasNotificationSupport(): boolean {
